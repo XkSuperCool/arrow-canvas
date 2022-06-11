@@ -1,28 +1,83 @@
 <template>
-  <div id="app">
-    <img alt="Vue logo" src="./assets/logo.png">
-    <HelloWorld msg="Welcome to Your Vue.js App"/>
+  <div id="app" @mousemove="handleMousemove">
+    <div
+      class="drag-el"
+      :style="{ left: left + 'px', top: top + 'px' }"
+      @mousedown="handleMousedown"
+    >
+      <ArrowCanvas />
+    </div>
   </div>
 </template>
 
 <script>
-import HelloWorld from './components/HelloWorld.vue'
+import ArrowCanvas from '@/components/arrow-canvas.vue';
 
 export default {
   name: 'App',
+
   components: {
-    HelloWorld
-  }
-}
+    ArrowCanvas,
+  },
+
+  data() {
+    return {
+      left: 400,
+      top: 100,
+    };
+  },
+
+  mounted() {
+    window.addEventListener('mouseup', this.handleMouseup);
+  },
+
+  beforeDestroy() {
+    window.removeEventListener('mouseup', this.handleMouseup);
+  },
+
+  methods: {
+    handleMouseup() {
+      this.drag = false;
+    },
+
+    handleMousedown(event) {
+      this.drag = true;
+      this.mouseEnterInfo = {};
+      ({ x: this.mouseEnterInfo.x, y: this.mouseEnterInfo.y } = event);
+    },
+
+    handleMousemove(event) {
+      if (!this.drag) return;
+
+      const left = event.x - this.mouseEnterInfo.x;
+      const top = event.y - this.mouseEnterInfo.y;
+      this.mouseEnterInfo.y = event.y;
+      this.mouseEnterInfo.x = event.x;
+
+      this.left += left;
+      this.top += top;
+    },
+  },
+};
 </script>
 
 <style>
+* {
+  margin: 0;
+  padding: 0;
+}
+
 #app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-  margin-top: 60px;
+  width: 1200px;
+  height: 600px;
+  margin: 100px auto 0 auto;
+  border: 1px solid rgb(31, 165, 107);
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.drag-el {
+  position: absolute;
 }
 </style>
