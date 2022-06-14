@@ -1,5 +1,6 @@
 <template>
   <div id="app" @mousemove="handleMousemove">
+    <div class="line"></div>
     <div
       class="drag-el"
       :style="{ left: left + 'px', top: top + 'px' }"
@@ -79,5 +80,14 @@ export default {
 
 .drag-el {
   position: absolute;
+}
+
+.line {
+  position: fixed;
+  width: 1px;
+  height: 100vh;
+  left: 420px;
+  top: 0;
+  background-color: red;
 }
 </style>

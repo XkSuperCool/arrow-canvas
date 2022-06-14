@@ -10,6 +10,8 @@
 </template>
 
 <script>
+import drawArrow from './arrow';
+
 export default {
   name: 'ArrowCanvas',
 
@@ -56,14 +58,9 @@ export default {
     },
 
     draw() {
-      this.ctx.clearRect(0, 0, this.width, this.height);
-      this.ctx.beginPath();
       const { left, right } = this.positions;
-      this.ctx.moveTo(left.x, left.y);
-      this.ctx.lineTo(right.x, right.y);
-      this.ctx.closePath();
-      this.ctx.strokeStyle = 'red';
-      this.ctx.stroke();
+      this.ctx.clearRect(0, 0, this.width, this.height);
+      drawArrow(this.ctx, left.x, left.y, right.x, right.y, 'red');
     },
 
     handleMousedown(event) {
@@ -97,6 +94,8 @@ export default {
       const x = event.x - this.mousedownInfo.x;
       const y = event.y - this.mousedownInfo.y;
 
+      const prevIsRightToLeft = this.positions.right.x < this.positions.left.x;
+      const prevIsBottomToTop = this.positions.right.y < this.positions.left.y;
       this.positions.right.x += x;
       this.positions.right.y += y;
 
@@ -106,6 +105,8 @@ export default {
       const isBottomToTop = this.positions.right.y < this.positions.left.y;
       const isNegativeY = y < 0;
 
+      const prevWidth = this.width;
+      const prevHeight = this.height;
       this.width += isRightToLeft ? (isNegativeX ? Math.abs(x) : -x) : x;
       this.height += isBottomToTop ? (isNegativeY ? Math.abs(y) : -y) : y;
 
@@ -119,12 +120,45 @@ export default {
         this.positions.right.x = this.PADDING;
       }
 
-
       // 右点由下面选转到上面
       if (isBottomToTop) {
         this.$parent.top += isNegativeY ? -Math.abs(y) : Math.abs(y);
         this.positions.left.y += isNegativeY ? Math.abs(y) : -Math.abs(y);
         this.positions.right.y = this.PADDING;
+      }
+
+      // 在快速移动时，事件的触发会有节流的效果，这会导致绘制计算错误，下面代码解决了这个问题
+      const PADDING = this.PADDING * 2;
+      const diffWidth = prevWidth - PADDING;
+      if (!prevIsRightToLeft && isRightToLeft && prevWidth > PADDING) {
+        this.$parent.left += diffWidth;
+        this.positions.left.x -= diffWidth;
+        this.width =
+          Math.abs(this.positions.left.x - this.positions.right.x) + PADDING;
+      }
+
+      if (prevIsRightToLeft && !isRightToLeft && prevWidth > PADDING) {
+        this.$parent.left += diffWidth;
+        this.positions.left.x -= diffWidth;
+        this.positions.right.x -= diffWidth;
+        this.width =
+          Math.abs(this.positions.left.x - this.positions.right.x) + PADDING;
+      }
+
+      const diffHeight = prevHeight - PADDING;
+      if (!prevIsBottomToTop && isBottomToTop && prevHeight > PADDING) {
+        this.$parent.top += diffHeight;
+        this.positions.left.y -= diffHeight;
+        this.height =
+          Math.abs(this.positions.left.y - this.positions.right.y) + PADDING;
+      }
+
+      if (prevIsBottomToTop && !isBottomToTop && prevHeight > PADDING) {
+        this.$parent.top += diffHeight;
+        this.positions.left.y -= diffHeight;
+        this.positions.right.y -= diffHeight;
+        this.height =
+          Math.abs(this.positions.left.y - this.positions.right.y) + PADDING;
       }
 
       this.$nextTick(this.draw);
